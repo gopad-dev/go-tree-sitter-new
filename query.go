@@ -110,7 +110,7 @@ type QueryCaptures struct {
 // Note that this is a C-compatible struct
 type QueryCapture struct {
 	Node  Node
-	Index uint32
+	Index uint
 }
 
 type QueryError struct {
@@ -789,10 +789,21 @@ func (qm *QueryMatch) Id() uint {
 	return qm.id
 }
 
+type queryCapture struct {
+	Node  Node
+	Index uint32
+}
+
 func newQueryMatch(m *C.TSQueryMatch, cursor *C.TSQueryCursor) QueryMatch {
 	var captures []QueryCapture
 	if m.capture_count > 0 {
-		captures = (*[1 << 16]QueryCapture)(unsafe.Pointer(m.captures))[:m.capture_count:m.capture_count]
+		rawCaptures := (*[1 << 16]queryCapture)(unsafe.Pointer(m.captures))[:m.capture_count:m.capture_count]
+		for _, capture := range rawCaptures {
+			captures = append(captures, QueryCapture{
+				Node:  capture.Node,
+				Index: uint(capture.Index),
+			})
+		}
 	}
 	return QueryMatch{
 		cursor:       cursor,
@@ -809,7 +820,7 @@ func (qm *QueryMatch) Remove() {
 func (qm *QueryMatch) NodesForCaptureIndex(captureIndex uint) []Node {
 	nodes := make([]Node, 0)
 	for _, capture := range qm.Captures {
-		if uint(capture.Index) == captureIndex {
+		if capture.Index == captureIndex {
 			nodes = append(nodes, capture.Node)
 		}
 	}

@@ -393,6 +393,6 @@ func (n *Node) Edit(edit *InputEdit) {
 }
 
 // Check if two nodes are identical.
-func (n *Node) Equals(other Node) bool {
+func (n Node) Equals(other Node) bool {
 	return bool(C.ts_node_eq(n._inner, other._inner))
 }
